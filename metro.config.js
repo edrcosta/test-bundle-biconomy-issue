@@ -13,8 +13,24 @@ const config = getDefaultConfig(projectRoot, {
 });
 
 config.watchFolders = [workspaceRoot];
+config.resolver.unstable_enablePackageExports = true;
+
+// Force CJS for @biconomy/abstractjs to avoid circular dependency issues with ESM
+config.resolver.unstable_conditionNames = ['require', 'default'];
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  // Force @biconomy/abstractjs to use CJS build to avoid circular dependency issues
+  if (moduleName === '@biconomy/abstractjs' || moduleName.startsWith('@biconomy/abstractjs/')) {
+    const subpath = moduleName.replace('@biconomy/abstractjs', '');
+    const cjsPath = subpath 
+      ? path.join(projectRoot, 'node_modules', '@biconomy', 'abstractjs', 'dist', '_cjs', subpath, 'index.js')
+      : path.join(projectRoot, 'node_modules', '@biconomy', 'abstractjs', 'dist', '_cjs', 'index.js');
+    return {
+      filePath: cjsPath,
+      type: 'sourceFile',
+    };
+  }
+
   if (moduleName === 'tslib') {
     return {
       filePath: require.resolve('tslib'),

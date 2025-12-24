@@ -21,6 +21,7 @@ import {
   MEEVersion
 } from '@biconomy/abstractjs';
 import { useReadContract } from 'wagmi';
+import { EthereumProvider } from '@walletconnect/ethereum-provider';
 
 export default function App() {
   const [account, setAccount] = useState<string | null>(null);
@@ -30,6 +31,7 @@ export default function App() {
   const [status, setStatus] = useState<string | null>(null);
   const [meeScanLink, setMeeScanLink] = useState<string | null>(null);
   const [recipients, setRecipients] = useState<string[]>(['']);
+  const [provider, setProvider] = useState<any>(null);
 
   const usdcAddress = '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
 
@@ -43,37 +45,55 @@ export default function App() {
   });
 
   const connectAndInit = async () => {
-    if (typeof (window as any).ethereum === 'undefined') {
-      alert('MetaMask not detected');
-      return;
-    }
-
-    const wallet = createWalletClient({
-      chain: baseSepolia,
-      transport: custom((window as any).ethereum)
-    });
-    setWalletClient(wallet);
-
-    const [address] = await wallet.requestAddresses();
-    setAccount(address);
-
-    const multiAccount = await toMultichainNexusAccount({
-      chainConfigurations: [
-        {
-          chain: baseSepolia,
-          transport: http(),
-          version: getMEEVersion(MEEVersion.V2_1_0)
+    try {
+      setStatus('Initializing WalletConnect...');
+      
+      // Initialize WalletConnect provider
+      const wcProvider = await EthereumProvider.init({
+        projectId: '0a6267b0921e1e8e946074dffe2b3dce', // Get from https://cloud.walletconnect.com
+        chains: [baseSepolia.id],
+        showQrModal: true,
+        metadata: {
+          name: 'Biconomy MEE Quickstart',
+          description: 'Biconomy MEE Quickstart',
+          url: 'https://example.com',
+          icons: ['https://example.com/icon.png']
         }
-      ],
-      signer: createWalletClient({
-        account: address,
-        transport: custom((window as any).ethereum)
-      })
-    });
-    setOrchestrator(multiAccount);
+      });
 
-    const mee = await createMeeClient({ account: multiAccount });
-    setMeeClient(mee);
+      setStatus('Connecting wallet...');
+      await wcProvider.connect();
+      setProvider(wcProvider);
+
+      const wallet = createWalletClient({
+        chain: baseSepolia,
+        transport: custom(wcProvider as any)
+      });
+      setWalletClient(wallet);
+
+      const [address] = await wallet.requestAddresses();
+      setAccount(address);
+
+      setStatus('Setting up Biconomy account...');
+      const multiAccount = await toMultichainNexusAccount({
+        chainConfigurations: [
+          {
+            chain: baseSepolia,
+            transport: http(),
+            version: getMEEVersion(MEEVersion.V2_1_0)
+          }
+        ],
+        signer: wallet
+      });
+      setOrchestrator(multiAccount);
+
+      const mee = await createMeeClient({ account: multiAccount });
+      setMeeClient(mee);
+      setStatus('Connected!');
+    } catch (error: any) {
+      console.error('Connection error:', error);
+      setStatus(`Error: ${error.message || 'Failed to connect'}`);
+    }
   };
 
   const executeTransfers = async () => {

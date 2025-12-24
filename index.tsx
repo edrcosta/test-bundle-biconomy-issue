@@ -1,4 +1,6 @@
 // sort-imports-ignore
+import 'react-native-get-random-values';
+import 'react-native-url-polyfill/auto';
 import '@expo/metro-runtime';
 import { registerRootComponent } from 'expo';
 import App from './app/App'
