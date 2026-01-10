@@ -7,7 +7,7 @@ import {
   targetChainViem, 
   isProduction,
   targetAssetType 
-} from '../../wagmi.config';
+} from '../wagmi';
 import { getPreferredWalletConnector } from '../utils/biconomy';
 
 export default function BiconomyDemo() {

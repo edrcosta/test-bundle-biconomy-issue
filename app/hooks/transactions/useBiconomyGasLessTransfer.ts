@@ -19,7 +19,7 @@ import {
   rcpRequestAccount,
   type WalletProvider,
 } from '../../utils/biconomy';
-import { config, isProduction, targetChainViem, targetUsdcAddress } from '../../../wagmi.config';
+import { config, isProduction, targetChainViem, targetUsdcAddress } from '../../wagmi';
 
 interface TransferParams {
   recipient: `0x${string}`;

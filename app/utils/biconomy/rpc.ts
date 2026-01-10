@@ -1,4 +1,4 @@
-import { targetChainViem } from '../../../wagmi.config';
+import { targetChainViem } from '../../wagmi';
 import type { WalletProvider } from './types';
 import type { AvailableWalletProvider } from './wallet-provider';
 
@@ -7,8 +7,6 @@ import type { AvailableWalletProvider } from './wallet-provider';
  *
  * NOTE: These RPC methods may not be supported or exist for all wallet providers.
  * so their errors are caught and logged as non-critical.
- *
- * @TODO create a proper support list of wallets and check the necessity of these calls per wallet.
  */
 
 export const KNOWN_WALLET_ERRORS = {
