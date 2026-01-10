@@ -5,6 +5,7 @@ This is a simplified demo application that reproduces the exact Biconomy flow fr
 ## Purpose
 
 This demo app isolates the Biconomy gasless transfer flow to make it easier to:
+
 - Reproduce and debug wallet connection issues
 - Test Fireblocks and WalletConnect integration
 - Share a minimal reproducible example with the Biconomy team
@@ -76,7 +77,9 @@ The app uses the same configuration as production:
 
 ## Key Implementation Details
 
-### SDK Bug Workaround
+### Biconomyy SDK Workarounds
+
+**Provider injection**
 
 The Biconomy SDK has a bug where it doesn't properly handle custom transports for WalletConnect. The workaround:
 
@@ -84,13 +87,17 @@ The Biconomy SDK has a bug where it doesn't properly handle custom transports fo
 2. Inject the provider into `window.ethereum` before transaction execution
 3. Restore the original `window.ethereum` after completion
 
+**Metro config export -  CJS build**
+
+A circular dependency issue caused by the way Metro Bundler works required a different package resolution for @biconomy/abstractjs  
+
 See `app/utils/biconomy/account.ts` for implementation.
 
 ### WalletConnect Flow
 
 For WalletConnect (including Fireblocks):
 1. Get provider from connector via `getProvider()`
-2. Check chain and switch if needed
+2. Check chain and switch if needed (all except for fireblocks that do not support the necessary RPC commands)
 3. Request accounts
 4. Inject provider into window.ethereum
 5. Create multichain account with custom transport
@@ -103,89 +110,12 @@ Fireblocks uses the same WalletConnect connector but skips some RPC calls:
 - No chain switching (Fireblocks controls the chain)
 - No account requests (handled by Fireblocks)
 
-## Debugging
-
-The demo includes extensive logging:
-
-1. **Console Logs** - All RPC calls and provider events
-2. **Activity Log** - User-facing status updates
-3. **Error Handling** - Detailed error messages with context
-
 ### Common Issues
-
-**"WalletConnect session is inactive"**
-- Session expired or wallet disconnected
-- Solution: Reconnect wallet
 
 **"Please switch your wallet to Avalanche Fuji"**
 - Wallet is on wrong chain
 - Solution: Manually switch in wallet app or approve chain switch request
 
-**"Transaction timeout"**
-- Transaction took longer than 30 minutes
-- Solution: Check wallet connection and retry
-
-## Differences from Production
-
-This demo simplifies some aspects:
-- No transaction history saving
-- No payment flow state management (Zustand store)
-- Simplified UI
-- No query invalidation (TanStack Query)
-
-However, the **core Biconomy flow is identical**:
-- Same wagmi configuration
-- Same Biconomy utilities
-- Same SDK bug workarounds
-- Same RPC call patterns
-- Same error handling
-
-## File Structure
-
-```
-app/
-├── components/
-│   └── BiconomyDemo.tsx          # Demo UI
-├── hooks/
-│   └── transactions/
-│       ├── useBiconomyGasLessTransfer.ts  # Main transfer hook
-│       └── useBiconomyPaymentFlow.ts      # Payment flow hook
-├── utils/
-│   └── biconomy/
-│       ├── account.ts            # Account creation + SDK workaround
-│       ├── chain.ts              # Chain switching
-│       ├── rpc.ts                # RPC methods
-│       ├── transactions.ts       # Transfer execution
-│       ├── connections.ts        # Connection helpers
-│       ├── connectors.ts         # Connector helpers
-│       ├── wallet-provider.ts    # Provider utilities
-│       └── types.ts              # TypeScript types
-└── types/
-    └── wallet.ts                 # Wallet type definitions
-wagmi.config.ts                   # Wagmi configuration
-```
-
-## Sharing with Biconomy
-
-This demo can be shared directly with the Biconomy team:
-
-1. Push to a public GitHub repo
-2. Share the repo URL
-3. Include your `.env` values (API key, WalletConnect project ID)
-4. Document the specific issue you're experiencing
-
-## Next Steps
-
-After reproducing the issue:
-1. Share logs and error messages with Biconomy
-2. Test potential fixes in this isolated environment
-3. Port verified fixes back to production
-
 ## Original Quickstart
 
-This project is based on:
-https://docs.biconomy.io/new/quickstart/external-wallets-quickstart#app-tsx
-
-## License
-
-MIT
+https://docs.biconomy.io/new/quickstart/external-wallets-quickstart#app-ts
